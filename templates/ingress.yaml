@@ -1,23 +1,23 @@
-{{- if .Values.kibana.ingress.enabled -}}
-{{- $serviceName := printf "%s-kibana" (include "fullname" .) -}}
-{{- $servicePort := .Values.kibana.service.httpPort -}}
+{{- if .Values.ingress.enabled -}}
+{{- $serviceName := printf "%s" (include "fullname" .) -}}
+{{- $servicePort := .Values.service.httpPort -}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: {{ template "fullname" . }}-kibana
+  name: {{ template "fullname" . }}
   labels:
     app: {{ template "name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    component: {{ template "fullname" . }}-kibana
+    component: {{ template "fullname" . }}
   annotations:
-    {{- range $key, $value := .Values.kibana.ingress.annotations }}
+    {{- range $key, $value := .Values.ingress.annotations }}
       {{ $key }}: {{ $value | quote }}
     {{- end }}
 spec:
   rules:
-    {{- range $host := .Values.kibana.ingress.hosts }}
+    {{- range $host := .Values.ingress.hosts }}
     - host: {{ $host }}
       http:
         paths:
@@ -25,8 +25,8 @@ spec:
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
     {{- end -}}
-  {{- if .Values.kibana.ingress.tls }}
+  {{- if .Values.ingress.tls }}
   tls:
-{{ toYaml .Values.kibana.ingress.tls | indent 4 }}
+{{ toYaml .Values.ingress.tls | indent 4 }}
   {{- end -}}
 {{- end -}}
