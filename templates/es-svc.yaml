@@ -1,6 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
+{{- if .Values.service.annotations }}
+  annotations:
+{{ toYaml .Values.service.annotations | indent 4 }}
+{{- end }}
   name: {{ template "fullname" . }}
   labels:
     app: {{ template "fullname" . }}
@@ -10,7 +14,7 @@ metadata:
     component: {{ template "fullname" . }}
     role: client
 spec:
-  type: {{ .Values.common.serviceType }}
+  type: {{ .Values.service.type }}
   selector:
     component: {{ template "fullname" . }}
     role: client
@@ -23,3 +27,14 @@ spec:
     port: {{ .Values.service.transportPort }}
     targetPort: 9300
     protocol: TCP
+{{- if .Values.service.externalIPs }}
+  externalIPs:
+{{ toYaml .Values.service.externalIPs | indent 4 }}
+{{- end }}
+{{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: "{{ .Values.service.loadBalancerIP }}"
+{{- end }}
+{{- if .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+{{ toYaml .Values.service.loadBalancerSourceRanges | indent 4 }}
+{{- end }}

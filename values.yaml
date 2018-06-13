@@ -1,7 +1,7 @@
 image:
   es:
     repository: quay.io/pires/docker-elasticsearch-kubernetes
-    tag: 6.2.3
+    tag: 5.6.4
     pullPolicy: Always
   init:
     repository: busybox
@@ -13,9 +13,6 @@ image:
     pullPolicy: IfNotPresent
 
 common:
-  # Defines the service type for all outward-facing (non-discovery) services.
-  # For minikube use NodePort otherwise use LoadBalancer
-  serviceType: LoadBalancer
 
   env:
     CLUSTER_NAME: "myesdb"
@@ -27,7 +24,7 @@ common:
   # If enabled, then the data and master nodes will be StatefulSets with
   # associated persistent volume claims.
   stateful:
-    enabled: false
+    enabled: true
 
     # The PVC storage class that backs the persistent volume claims. On AWS
     # "gp2" would be appropriate.
@@ -36,20 +33,20 @@ common:
 # Client/ingest nodes can execute pre-processing pipelines, composed of
 # one or more ingest processors. Depending on the type of operations performed
 # by the ingest processors and the required resources, it may make sense to
-# have dedicated ingest nodes, that will only perform this specific task.  
+# have dedicated ingest nodes, that will only perform this specific task.
 client:
   # It isn't common to need more than 2 client nodes.
   replicas: 2
-  antiAffinity: "soft"
+  antiAffinity: "hard"
 
   # The amount of RAM allocated to the JVM heap. This should be set to the
   # same value as client.resources.requests.memory, or you may see
   # OutOfMemoryErrors on startup.
-  heapMemory: 256m
+  heapMemory: 2048m
 
   resources:
     requests:
-      memory: 256Mi
+      memory: 2048Mi
 
   env:
     NODE_DATA: "false"
@@ -58,25 +55,25 @@ client:
     HTTP_ENABLE: "true"
 
 # Data nodes hold the shards that contain the documents you have indexed. Data
-# nodes handle data related operations like CRUD, search, and aggregations. 
-# These operations are I/O-, memory-, and CPU-intensive. It is important to 
+# nodes handle data related operations like CRUD, search, and aggregations.
+# These operations are I/O-, memory-, and CPU-intensive. It is important to
 # monitor these resources and to add more data nodes if they are overloaded.
 #
-# The main benefit of having dedicated data nodes is the separation of the 
+# The main benefit of having dedicated data nodes is the separation of the
 # master and data roles.
 data:
   # This count will depend on your data and computation needs.
   replicas: 2
-  antiAffinity: "soft"
+  antiAffinity: "hard"
 
   # The amount of RAM allocated to the JVM heap. This should be set to the
   # same value as data.resources.requests.memory, or you may see
   # OutOfMemoryErrors on startup.
-  heapMemory: 256m
+  heapMemory: 2048m
 
   resources:
     requests:
-      memory: 256Mi
+      memory: 2048Mi
 
   env:
     NODE_DATA: "true"
@@ -90,32 +87,32 @@ data:
   stateful:
     # This is a default value, and will not be sufficient in a production
     # system. You'll probably want to increase it.
-    size: 12Gi
+    size: 60Gi
 
 # The master node is responsible for lightweight cluster-wide actions such as
-# creating or deleting an index, tracking which nodes are part of the 
-# cluster, and deciding which shards to allocate to which nodes. It is 
+# creating or deleting an index, tracking which nodes are part of the
+# cluster, and deciding which shards to allocate to which nodes. It is
 # important for cluster health to have a stable master node.
 master:
   # Master replica count should be (#clients / 2) + 1, and generally at least 3.
   replicas: 3
-  antiAffinity: "soft"
-  
+  antiAffinity: "hard"
+
   # The amount of RAM allocated to the JVM heap. This should be set to the
   # same value as master.resources.requests.memory, or you may see
   # OutOfMemoryErrors on startup.
-  heapMemory: 256m
+  heapMemory: 2048m
 
   resources:
     requests:
-      memory: 256Mi
+      memory: 2048Mi
 
   env:
     NODE_DATA: "false"
     NODE_MASTER: "true"
     NODE_INGEST: "false"
     HTTP_ENABLE: "false"
-    
+
     # The default value for this environment variable is 2, meaning a cluster
     # will need a minimum of 2 master nodes to operate. If you have 3 masters
     # and one dies, the cluster still works.
@@ -127,10 +124,10 @@ master:
   stateful:
     # This is a default value, and will not be sufficient in a production
     # system. You'll probably want to increase it.
-    size: 2Gi  
+    size: 60Gi
 
 curator:
-  enabled: true
+  enabled: false
   schedule: "0 1 * * *"
 
   # Allows modification of the default age-based filter. If you require more
@@ -144,25 +141,42 @@ curator:
 service:
   httpPort: 9200
   transportPort: 9300
+  annotations: {}
+  clusterIP: ""
+  ## List of IP addresses at which the service is available
+  ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
+  ##
+  externalIPs: []
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  type: LoadBalancer
 
 kibana:
   enabled: true
   replicas: 1
   image:
-    repository: docker.elastic.co/kibana/kibana-oss
-    tag: 6.2.3
+    repository: docker.elastic.co/kibana/kibana
+    tag: 5.6.6
     pullPolicy: Always
-  httpPort: 80
+  command: [ "/bin/bash", "-c", "/usr/share/kibana/bin/kibana-plugin remove x-pack; /usr/local/bin/kibana-docker" ]
   resources:
     limits:
       cpu: 1000m
     requests:
       cpu: 100m
+  service:
+    httpPort: 80
+    annotations: {}
+    clusterIP: ""
+    externalIPs: []
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    type: LoadBalancer
   env:
-    # XPACK_GRAPH_ENABLED: "false"
-    # XPACK_ML_ENABLED: "false"
-    # XPACK_REPORTING_ENABLED: "false"
-    # XPACK_SECURITY_ENABLED: "false"
+    XPACK_GRAPH_ENABLED: "false"
+    XPACK_ML_ENABLED: "false"
+    XPACK_REPORTING_ENABLED: "false"
+    XPACK_SECURITY_ENABLED: "false"
   ingress:
     enabled: false
     # Used to create an Ingress record.

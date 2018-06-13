@@ -24,6 +24,10 @@ spec:
       - name: kibana
         image: "{{ .Values.kibana.image.repository }}:{{ .Values.kibana.image.tag }}"
         imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
+{{- if .Values.kibana.command }}
+        command:
+{{ toYaml .Values.kibana.command | indent 12 }}
+{{- end }}
         env:
         - name: CLUSTER_NAME
           value: {{ .Values.common.env.CLUSTER_NAME }}
