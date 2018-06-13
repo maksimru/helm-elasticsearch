@@ -11,6 +11,7 @@ Pool #2 with 2 preemptible nodes
 2. Prepare tiller
 
 ```bash
+helm init
 kubectl create serviceaccount --namespace kube-system tiller
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
@@ -19,8 +20,6 @@ kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"templat
 3. Deploy cluster
 
 ```bash
-
-helm init
 git clone -b elastic5-configurable http://github.com/maksimru/helm-elasticsearch.git helm-elasticsearch
 helm install \
 --set client.heapMemory=1024m,client.resources.requests.memory=1024Mi \
